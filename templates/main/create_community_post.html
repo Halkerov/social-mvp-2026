@@ -1,0 +1,31 @@
+{% extends 'main/base.html' %}
+{% block title %}Новая публикация{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="page-hero">
+            <h1 class="page-title">📝 Новая публикация в {{ community.name }}</h1>
+        </div>
+
+        <div class="panel-card">
+            <form method="post" enctype="multipart/form-data" style="max-width: 600px;">
+                {% csrf_token %}
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600;">Заголовок</label>
+                    <input type="text" name="title" class="form-control" placeholder="Заголовок публикации">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600;">Текст</label>
+                    <textarea name="content" class="form-control" rows="6" placeholder="Текст публикации..."></textarea>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600;">Изображение (необязательно)</label>
+                    <input type="file" name="image" accept="image/*">
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Опубликовать</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">
+                <a href="{% url 'community_detail' community.id %}">← Отмена</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

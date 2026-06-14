@@ -1,0 +1,82 @@
+{% for reply in replies %}
+    <div style="padding: 12px 0; {% if not forloop.last %}border-bottom: 1px solid var(--border-color);{% endif %}">
+        <div style="display: flex; gap: 10px;">
+            {% if reply.author.profile.avatar %}
+                <img src="{{ reply.author.profile.avatar.url }}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
+            {% else %}
+                <div style="width: 28px; height: 28px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+                    {{ reply.author.username|first|upper }}
+                </div>
+            {% endif %}
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <a href="{% url 'profile' reply.author.username %}" style="color: var(--primary); font-weight: 600; font-size: 13px; text-decoration: none;">{{ reply.author.username }}</a>
+                    {% if reply.parent %}
+                        <span style="color: var(--muted); font-size: 12px;">→ {{ reply.parent.author.username }}</span>
+                    {% endif %}
+                    <span style="color: var(--muted); font-size: 12px;">{{ reply.created_at|date:"d.m.Y H:i" }}{% if reply.edited %} · ред.{% endif %}</span>
+                </div>
+                {% if reply.content != 'удалено' %}
+                    <p style="color: var(--text-color); font-size: 14px; margin: 6px 0; line-height: 1.4;">{{ reply.content }}</p>
+                    
+                    {% if reply.images.all %}
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; margin: 8px 0;">
+                            {% for img in reply.images.all %}
+                                <img src="{{ img.image.url }}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 8px;">
+                        <button type="button" class="like-comment-btn" data-comment-id="{{ reply.id }}" style="background: none; border: none; cursor: pointer; color: var(--secondary); font-size: 12px; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 8px;">
+                            <span id="like-icon-{{ reply.id }}">❤️</span>
+                            <span id="like-count-{{ reply.id }}">{{ reply.likes.count }}</span>
+                        </button>
+                        {% if user.is_authenticated %}
+                            <button onclick="toggleReplyForm({{ reply.id }})" style="background: none; border: none; cursor: pointer; color: var(--primary); font-size: 12px; padding: 4px 8px; border-radius: 8px;">Ответить</button>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Форма ответа на подкомментарий с предпросмотром фото -->
+                    {% if user.is_authenticated %}
+                        <div id="reply-form-{{ reply.id }}" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+                            <form method="post" enctype="multipart/form-data" action="{% url 'add_comment' reply.post.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="parent_id" value="{{ reply.id }}">
+                                <textarea name="content" rows="2" placeholder="Напишите ответ..." style="width: 100%; padding: 8px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); margin-bottom: 8px; font-size: 13px; resize: vertical;" required></textarea>
+                                
+                                <!-- Предпросмотр фото для ответа на подкомментарий -->
+                                <div id="reply-image-preview-{{ reply.id }}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin-bottom: 8px;"></div>
+                                
+                                <div style="display: flex; gap: 8px;">
+                                    <label style="cursor: pointer; font-size: 18px; color: var(--primary);">
+                                        📎
+                                        <input type="file" name="images" multiple accept="image/*" style="display: none;" onchange="previewCommentImages(this, 'reply-image-preview-{{ reply.id }}')">
+                                    </label>
+                                    <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Отправить</button>
+                                    <button type="button" onclick="toggleReplyForm({{ reply.id }})" style="background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px;">Отмена</button>
+                                </div>
+                            </form>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p style="color: var(--muted); font-style: italic; font-size: 12px;">Комментарий удалён</p>
+                {% endif %}
+                
+                {% if reply.author == user and reply.content != 'удалено' %}
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <a href="{% url 'edit_comment' reply.id %}" style="color: var(--muted); font-size: 14px; text-decoration: none;">✏️</a>
+                        <a href="{% url 'delete_comment' reply.id %}" style="color: #ff3b30; font-size: 14px; text-decoration: none;" onclick="return confirm('Удалить комментарий?')">🗑️</a>
+                    </div>
+                {% endif %}
+                
+                <!-- Рекурсивные ответы -->
+                {% if reply.replies.all %}
+                    <div style="margin-top: 10px; padding-left: 30px; border-left: 2px solid var(--border-color);">
+                        {% include 'main/comment_replies.html' with replies=reply.replies.all level=level|add:1 %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}

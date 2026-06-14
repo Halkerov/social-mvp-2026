@@ -1,0 +1,27 @@
+{% extends 'main/base.html' %}
+{% block title %}Сообщения{% endblock %}
+{% block content %}
+    <h1>💬 Сообщения</h1>
+    
+    <h2>📥 Входящие</h2>
+    {% for message in received %}
+        <div class="post">
+            <strong>От:</strong> <a href="{% url 'profile' message.sender.username %}">{{ message.sender.username }}</a><br>
+            <p>{{ message.content }}</p>
+            <small>{{ message.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+    {% empty %}
+        <p>Нет входящих сообщений</p>
+    {% endfor %}
+    
+    <h2 style="margin-top: 2rem;">📤 Исходящие</h2>
+    {% for message in sent %}
+        <div class="post">
+            <strong>Кому:</strong> <a href="{% url 'profile' message.receiver.username %}">{{ message.receiver.username }}</a><br>
+            <p>{{ message.content }}</p>
+            <small>{{ message.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+    {% empty %}
+        <p>Нет исходящих сообщений</p>
+    {% endfor %}
+{% endblock %}

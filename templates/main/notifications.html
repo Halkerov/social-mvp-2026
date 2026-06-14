@@ -1,0 +1,64 @@
+{% extends 'main/base.html' %}
+{% block title %}Уведомления{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="page-hero">
+            <h1 class="page-title">🔔 Уведомления</h1>
+        </div>
+        
+        <div style="max-width: 800px; margin-left: auto; margin-right: auto;">
+            {% if notifications %}
+                {% for notif in notifications %}
+                    <div class="panel-card" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; {% if not notif.is_read %}border-left: 4px solid var(--primary); opacity: 1;{% else %}opacity: 0.6;{% endif %} transition: opacity 0.2s;">
+                        <div style="flex: 1;">
+                            {% if notif.notif_type == 'friend_request' %}
+                                <p style="margin: 0 0 4px; font-size: 13px; color: var(--muted);">📬 Заявка в друзья</p>
+                                <p style="margin: 0;">
+                                    <a href="{% url 'profile' notif.actor.username %}" style="color: var(--primary); font-weight: 600;">{{ notif.actor.username }}</a>
+                                    отправил заявку в друзья
+                                </p>
+                            {% elif notif.notif_type == 'friend_accepted' %}
+                                <p style="margin: 0 0 4px; font-size: 13px; color: var(--muted);">✅ Принято в друзья</p>
+                                <p style="margin: 0;">
+                                    <a href="{% url 'profile' notif.actor.username %}" style="color: var(--primary); font-weight: 600;">{{ notif.actor.username }}</a>
+                                    принял заявку в друзья
+                                </p>
+                            {% elif notif.notif_type == 'message' %}
+                                <p style="margin: 0 0 4px; font-size: 13px; color: var(--muted);">💬 Новое сообщение</p>
+                                <p style="margin: 0;">
+                                    <a href="{% url 'chat' notif.actor.username %}" style="color: var(--primary); font-weight: 600;">{{ notif.actor.username }}</a>
+                                    отправил сообщение
+                                </p>
+                            {% elif notif.notif_type == 'comment' %}
+                                <p style="margin: 0 0 4px; font-size: 13px; color: var(--muted);">💬 Новый комментарий</p>
+                                <p style="margin: 0;">
+                                    <a href="{% url 'profile' notif.actor.username %}" style="color: var(--primary); font-weight: 600;">{{ notif.actor.username }}</a>
+                                    оставил комментарий
+                                </p>
+                            {% elif notif.notif_type == 'like' %}
+                                <p style="margin: 0 0 4px; font-size: 13px; color: var(--muted);">❤️ Лайк</p>
+                                <p style="margin: 0;">
+                                    <a href="{% url 'profile' notif.actor.username %}" style="color: var(--primary); font-weight: 600;">{{ notif.actor.username }}</a>
+                                    поставил лайк
+                                </p>
+                            {% else %}
+                                <p style="margin: 0;">{{ notif.text }}</p>
+                            {% endif %}
+                            <p style="margin: 8px 0 0; font-size: 12px; color: var(--muted);">{{ notif.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                        {% if not notif.is_read %}
+                            <a href="{% url 'mark_notification_read' notif.id %}" class="btn" style="padding: 8px 12px; font-size: 12px;">✓ Прочитано</a>
+                        {% else %}
+                            <span style="color: var(--muted); font-size: 12px;">✓ Прочитано</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="panel-card" style="text-align: center; padding: 60px 20px;">
+                    <p style="font-size: 48px; margin: 0;">🔔</p>
+                    <p style="color: var(--muted); font-size: 16px;">Нет уведомлений</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

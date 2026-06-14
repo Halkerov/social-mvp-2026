@@ -1,0 +1,40 @@
+{% extends 'main/base.html' %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="container">
+    <a href="{% url 'community_detail' community.id %}" class="btn" style="background: var(--surface-muted); margin-bottom: 1rem;">← Назад к сообществу</a>
+    
+    <div class="post" style="background: var(--surface); padding: 20px; border-radius: 8px; box-shadow: var(--card-shadow); margin-bottom: 20px;">
+        <h1 style="margin: 0 0 10px 0; color: var(--text);">{{ post.title }}</h1>
+        <div style="color: var(--muted); margin-bottom: 15px; font-size: 14px;">
+            Сообщество: <a href="{% url 'community_detail' community.id %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">{{ community.name }}</a>
+            · Автор: <a href="{% url 'profile' post.author.username %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">{{ post.author.username }}</a>
+            · {{ post.created_at|date:"d.m.Y H:i" }}
+        </div>
+        
+        <div style="margin: 15px 0; line-height: 1.6;">{{ post.content }}</div>
+        
+        {% if post.image %}
+            <img src="{{ post.image.url }}" alt="{{ post.title }}" style="max-width: 100%; border-radius: 8px; margin: 15px 0;">
+        {% endif %}
+        
+        <div style="display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 15px 0;">
+            <form action="{% url 'like_community_post' post.id %}" method="post" style="display: flex; align-items: center; gap: 5px;">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 5px;">
+                    ❤️ Нравится
+                </button>
+            </form>
+        </div>
+        
+        {% if user == post.author %}
+            <div style="margin-top: 15px; padding: 15px; background: var(--surface-muted); border-radius: 8px;">
+                <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn" style="background: var(--danger);" onclick="return confirm('Удалить публикацию?')">🗑️ Удалить</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

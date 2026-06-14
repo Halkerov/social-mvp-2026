@@ -1,0 +1,16 @@
+{% extends 'main/base.html' %}
+{% block title %}Пожаловаться{% endblock %}
+{% block content %}
+    <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: var(--surface); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h1>⚠️ Пожаловаться на {{ reported_user.username }}</h1>
+        <p style="color: var(--muted); margin: 1rem 0;">Опишите причину жалобы:</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Отправить жалобу</button>
+        </form>
+        <p style="text-align: center; margin-top: 1rem;">
+            <a href="{% url 'profile' reported_user.username %}" style="color: var(--primary);">← Отмена</a>
+        </p>
+    </div>
+{% endblock %}

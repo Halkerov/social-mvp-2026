@@ -1,0 +1,551 @@
+{% extends 'main/base.html' %}
+{% block title %}{{ profile_user.username }}{% endblock %}
+{% block content %}
+<style>
+.profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Шапка профиля - 3 колонки на десктопе */
+.profile-header {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 25px;
+    align-items: start;
+    transition: all 0.3s;
+}
+
+.profile-header:hover {
+    box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+/* Левая колонка - Аватар */
+.profile-avatar-col {
+    display: flex;
+    justify-content: center;
+}
+
+.profile-avatar {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.profile-avatar img,
+.profile-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--primary);
+    box-shadow: 0 0 25px var(--primary-glow);
+}
+
+.profile-avatar .avatar-placeholder {
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 42px;
+}
+
+.online-status {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    background: #34c759;
+    border: 4px solid var(--card-bg);
+    border-radius: 50%;
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(52, 199, 89, 0.5);
+}
+
+/* Центральная колонка - Информация */
+.profile-info {
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+}
+
+.profile-username {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 12px 0;
+    font-family: monospace;
+}
+
+.profile-status {
+    font-size: 14px;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.profile-status.online { color: #34c759; font-weight: 600; }
+.profile-status.offline { color: var(--muted); }
+
+.profile-bio {
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0 0 15px 0;
+    font-size: 15px;
+}
+
+.profile-interests {
+    color: var(--secondary);
+    font-size: 14px;
+    margin: 0;
+    padding: 10px 15px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.profile-interests strong { color: var(--text-color); }
+
+/* Правая колонка - Кнопки */
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 180px;
+}
+
+.profile-actions .btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px var(--primary-glow); }
+
+.btn-danger { background: #ff3b30; color: white; box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3); }
+.btn-danger:hover { transform: translateY(-2px); background: #d63031; }
+
+.btn-secondary { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); }
+.btn-secondary:hover { background: var(--border-color); }
+
+/* Посты */
+.posts-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 30px 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.post-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.post-card:hover {
+    box-shadow: 0 4px 16px var(--primary-glow);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.post-author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.post-author-info img,
+.post-author-info .avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-author-info .avatar-placeholder {
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.post-author-name {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.post-time { color: var(--muted); font-size: 12px; }
+
+.post-actions-top { display: flex; gap: 8px; }
+.post-actions-top a { font-size: 18px; text-decoration: none; opacity: 0.6; transition: opacity 0.2s; }
+.post-actions-top a:hover { opacity: 1; }
+
+.post-title { margin: 0 0 8px 0; color: var(--text-color); font-size: 18px; }
+.post-title a { color: var(--text-color); text-decoration: none; }
+.post-title a:hover { color: var(--primary); }
+
+.post-content { line-height: 1.6; margin-bottom: 12px; color: var(--text-color); white-space: pre-wrap; font-size: 14px; }
+
+.post-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.post-images img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.post-images img:hover { transform: scale(1.03); }
+
+.post-footer {
+    display: flex;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.post-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--secondary);
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.post-stat:hover { background: var(--primary-glow); color: var(--primary); }
+
+.empty-posts {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    color: var(--muted);
+    box-shadow: var(--shadow);
+    font-size: 15px;
+}
+
+/* ==================== МОБИЛЬНАЯ ВЕРСИЯ ==================== */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 0 10px;
+    }
+    
+    .profile-header {
+        /* На мобильном: одна колонка, всё по центру */
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        text-align: center;
+        padding: 20px 15px;
+        gap: 20px;
+    }
+    
+    /* Аватар по центру сверху */
+    .profile-avatar-col {
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .online-status {
+        width: 18px;
+        height: 18px;
+        border-width: 3px;
+    }
+    
+    /* Информация по центру */
+    .profile-info {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .profile-name {
+        font-size: 22px;
+        margin-bottom: 5px;
+    }
+    
+    .profile-username {
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .profile-status {
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    
+    .profile-bio {
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+    
+    .profile-interests {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+    
+    /* Кнопки в две колонки на мобильном */
+    .profile-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        min-width: auto;
+        gap: 8px;
+    }
+    
+    .profile-actions .btn {
+        flex: 1;
+        min-width: calc(50% - 4px);
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+    
+    /* Посты */
+    .posts-section-title {
+        font-size: 18px;
+        margin: 20px 0 12px 0;
+    }
+    
+    .post-card {
+        padding: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .post-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .post-actions-top {
+        align-self: flex-end;
+    }
+    
+    .post-title {
+        font-size: 16px;
+    }
+    
+    .post-content {
+        font-size: 13px;
+    }
+    
+    .post-images {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .post-images img {
+        height: 120px;
+    }
+    
+    .post-footer {
+        gap: 8px;
+    }
+    
+    .post-stat {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+}
+
+/* Очень маленькие экраны (iPhone SE и т.п.) */
+@media (max-width: 375px) {
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-name {
+        font-size: 18px;
+    }
+    
+    .profile-actions .btn {
+        min-width: 100%;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    .post-images {
+        grid-template-columns: 1fr;
+    }
+    
+    .post-images img {
+        height: 150px;
+    }
+}
+</style>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <!-- Левая: Аватар -->
+        <div class="profile-avatar-col">
+            <div class="profile-avatar">
+                {% if profile_user.profile.avatar %}
+                    <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}">
+                {% else %}
+                    <div class="avatar-placeholder">{{ profile_user.username|first|upper }}</div>
+                {% endif %}
+                {% if profile_user.profile.is_online %}
+                    <div class="online-status" title="Онлайн"></div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Центр: Информация -->
+        <div class="profile-info">
+            <h1 class="profile-name">{{ profile_user.first_name }} {{ profile_user.last_name }}</h1>
+            <p class="profile-username">@{{ profile_user.username }}</p>
+            
+            {% if profile_user.profile.is_online %}
+                <p class="profile-status online">● онлайн</p>
+            {% else %}
+                <p class="profile-status offline">Последнее посещение: {{ profile_user.profile.last_seen|date:"d.m.Y H:i" }}</p>
+            {% endif %}
+            
+            {% if profile_user.profile.bio %}
+                <p class="profile-bio">{{ profile_user.profile.bio }}</p>
+            {% endif %}
+            
+            {% if profile_user.profile.interests %}
+                <p class="profile-interests">🎯 <strong>Интересы:</strong> {{ profile_user.profile.interests }}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Правая: Кнопки -->
+        <div class="profile-actions">
+            {% if user == profile_user %}
+                <a href="{% url 'edit_profile' %}" class="btn btn-primary">✏️ Редактировать профиль</a>
+                <form action="{% url 'logout' %}" method="post" style="display: contents;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Выйти из аккаунта?')">🚪 Выйти</button>
+                </form>
+            {% else %}
+                {% if is_friend %}
+                    <form action="{% url 'unfriend' profile_user.username %}" method="post" style="display: contents;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary" onclick="return confirm('Удалить из друзей?')">❌ Удалить из друзей</button>
+                    </form>
+                {% elif friendship_status == 'pending_sent' %}
+                    <button class="btn btn-secondary" style="cursor: not-allowed; opacity: 0.6;">⏳ Заявка отправлена</button>
+                {% elif friendship_status == 'pending_received' %}
+                    <a href="{% url 'accept_friend_request' friendship.id %}" class="btn btn-primary" style="background: #34c759;">✓ Принять</a>
+                    <a href="{% url 'decline_friend_request' friendship.id %}" class="btn btn-danger">✕ Отклонить</a>
+                {% else %}
+                    <a href="{% url 'send_friend_request' profile_user.username %}" class="btn btn-primary">👥 Добавить в друзья</a>
+                {% endif %}
+                
+                <a href="{% url 'chat' profile_user.username %}" class="btn btn-primary">💬 Написать</a>
+                <a href="{% url 'report_user' profile_user.username %}" class="btn btn-danger">⚠️ Пожаловаться</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Посты -->
+    <h2 class="posts-section-title">📝 Посты ({{ posts.count }})</h2>
+    
+    {% for post in posts %}
+        <article class="post-card" onclick="window.location.href='{% url 'post_detail' post.id %}'">
+            <div class="post-header">
+                <div class="post-author-info">
+                    {% if post.author.profile.avatar %}
+                        <img src="{{ post.author.profile.avatar.url }}" alt="{{ post.author.username }}">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                    {% endif %}
+                    <div>
+                        <a href="{% url 'profile' post.author.username %}" class="post-author-name" onclick="event.stopPropagation();">{{ post.author.username }}</a>
+                        <div class="post-time">{{ post.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                {% if post.author == user %}
+                    <div class="post-actions-top" onclick="event.stopPropagation();">
+                        <a href="{% url 'edit_post' post.id %}" title="Редактировать">✏️</a>
+                        <a href="{% url 'delete_post' post.id %}" title="Удалить" onclick="return confirm('Удалить пост?')">🗑️</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <h3 class="post-title">
+                <a href="{% url 'post_detail' post.id %}" onclick="event.stopPropagation();">{{ post.title }}</a>
+            </h3>
+            <p class="post-content">{{ post.content|truncatewords:50 }}</p>
+            
+            {% if post.images.all %}
+                <div class="post-images" onclick="event.stopPropagation();">
+                    {% for img in post.images.all %}
+                        <img src="{{ img.image.url }}" onclick="event.stopPropagation(); window.open(this.src)">
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="post-footer" onclick="event.stopPropagation();">
+                <a href="{% url 'post_detail' post.id %}" class="post-stat">❤️ {{ post.likes.count }}</a>
+                <a href="{% url 'post_detail' post.id %}#comments" class="post-stat">💬 {{ post.comments.count }}</a>
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-posts">У пользователя пока нет постов</div>
+    {% endfor %}
+</div>
+{% endblock %}

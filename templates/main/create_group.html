@@ -1,0 +1,28 @@
+{% extends 'main/base.html' %}
+{% block title %}Создать группу{% endblock %}
+{% block content %}
+    <div class="center-form">
+        <div class="panel-card">
+            <h1 style="margin-top: 0;">📝 Создать группу</h1>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div style="margin-bottom: 16px;">
+                    <label for="name">Название группы</label>
+                    <input type="text" id="name" name="name" placeholder="Введите название" required>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label for="description">Описание</label>
+                    <textarea id="description" name="description" placeholder="Краткое описание группы" rows="4"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="submit" class="btn">✓ Создать</button>
+                    <a href="{% url 'communities_list' %}" class="btn" style="background: var(--surface-muted); color: var(--text);">✕ Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

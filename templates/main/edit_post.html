@@ -1,0 +1,99 @@
+{% extends 'main/base.html' %}
+{% block title %}Редактировать пост{% endblock %}
+{% block content %}
+<div class="panel-card" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-bottom: 20px; color: var(--text-color);">✏️ Редактировать пост</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="edit-post-form">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-color);">Заголовок</label>
+            <input type="text" name="title" value="{{ post.title }}" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-color);">Текст</label>
+            <textarea name="content" rows="5" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); resize: vertical;">{{ post.content }}</textarea>
+        </div>
+        
+        <!-- Текущие изображения -->
+        {% if existing_images %}
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-color);">Текущие изображения (нажмите 🗑️ чтобы удалить)</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
+                    {% for img in existing_images %}
+                        <div style="position: relative;" id="img-container-{{ img.id }}">
+                            <img src="{{ img.image.url }}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px;">
+                            <button type="button" onclick="toggleImageDelete({{ img.id }})" style="position: absolute; top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">🗑️</button>
+                            <input type="checkbox" name="remove_image_ids" value="{{ img.id }}" id="remove-{{ img.id }}" style="display: none;">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Предпросмотр новых фото -->
+        <div id="image-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px;"></div>
+        
+        <!-- Скрепка и кнопка -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="cursor: pointer; font-size: 24px; color: var(--primary); padding: 10px;">
+                📎
+                <input type="file" name="images" multiple accept="image/*" style="display: none;" id="image-input" onchange="previewImages(this)">
+            </label>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">Сохранить изменения</button>
+                <a href="{% url 'post_detail' post.id %}" style="color: var(--primary); text-decoration: none; padding: 12px 20px;">← Отмена</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function previewImages(input) {
+    const preview = document.getElementById('image-preview');
+    
+    if (input.files) {
+        Array.from(input.files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative;';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 100%; height: 100px; object-fit: cover; border-radius: 8px;';
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '🗑️';
+                    removeBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;';
+                    removeBtn.onclick = function() {
+                        div.remove();
+                    };
+                    
+                    div.appendChild(img);
+                    div.appendChild(removeBtn);
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+function toggleImageDelete(imgId) {
+    const checkbox = document.getElementById('remove-' + imgId);
+    const container = document.getElementById('img-container-' + imgId);
+    
+    if (checkbox.checked) {
+        checkbox.checked = false;
+        container.style.opacity = '1';
+    } else {
+        checkbox.checked = true;
+        container.style.opacity = '0.5';
+    }
+}
+</script>
+{% endblock %}

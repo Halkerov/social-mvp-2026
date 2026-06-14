@@ -1,0 +1,108 @@
+{% extends 'main/base.html' %}
+{% load custom_filters %}
+{% block title %}Лента{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0; color: var(--text-color);"> Лента</h1>
+        <a href="{% url 'create_post' %}" class="btn btn-primary">➕ Создать пост</a>
+    </div>
+
+    {% for post in posts %}
+        <article class="panel-card" style="padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    {% if post.author.profile.avatar %}
+                        <img src="{{ post.author.profile.avatar.url }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            {{ post.author.username|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <a href="{% url 'profile' post.author.username %}" style="color: var(--primary); font-weight: 600; text-decoration: none;">{{ post.author.username }}</a>
+                        <div style="color: var(--muted); font-size: 13px;">{{ post.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                
+                {% if post.author == user %}
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{% url 'edit_post' post.id %}" style="color: var(--muted); font-size: 18px; text-decoration: none;">✏️</a>
+                        <a href="{% url 'delete_post' post.id %}" style="color: #ff3b30; font-size: 18px; text-decoration: none;" onclick="return confirm('Удалить пост?')">🗑️</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <h2 style="margin: 0 0 10px 0; color: var(--text-color); font-size: 20px;">{{ post.title }}</h2>
+            <p style="line-height: 1.6; margin-bottom: 15px; color: var(--text-color); white-space: pre-wrap;">{{ post.content }}</p>
+            
+            {% if post.images.all %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 15px 0;">
+                    {% for img in post.images.all %}
+                        <img src="{{ img.image.url }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+                    {% endfor %}
+                </div>
+            {% elif post.image %}
+                <img src="{{ post.image.url }}" style="max-width: 100%; height: 300px; object-fit: cover; border-radius: 8px; margin: 15px 0;">
+            {% endif %}
+            
+            <div style="display: flex; gap: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <button type="button" class="like-btn" data-post-id="{{ post.id }}" style="background: none; border: none; cursor: pointer; color: var(--secondary); display: flex; align-items: center; gap: 5px; font-size: 16px; padding: 8px 12px; border-radius: 8px;">
+                    <span id="like-icon-{{ post.id }}">{% if post|user_liked:user %}❤️{% else %}🤍{% endif %}</span>
+                    <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+                </button>
+                <a href="{% url 'post_detail' post.id %}#comments" style="color: var(--secondary); text-decoration: none; display: flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 8px;">
+                    💬 {{ post.comments.count }}
+                </a>
+            </div>
+        </article>
+    {% empty %}
+        <div class="panel-card" style="text-align: center; padding: 40px; color: var(--muted);">
+            <div style="font-size: 48px; margin-bottom: 10px;">📰</div>
+            <div>Пока нет постов. Будьте первым!</div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const postId = this.getAttribute('data-post-id');
+        const likeIcon = document.getElementById('like-icon-' + postId);
+        const likeCount = document.getElementById('like-count-' + postId);
+        
+        fetch('/post/' + postId + '/like/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            likeIcon.textContent = data.liked ? '❤️' : '🤍';
+            likeCount.textContent = data.count;  // ✅ ИСПРАВЛЕНО: было data.like_count
+        })
+        .catch(error => {
+            console.error('Like error:', error);
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

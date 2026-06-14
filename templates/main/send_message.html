@@ -1,0 +1,15 @@
+{% extends 'main/base.html' %}
+{% block title %}Новое сообщение{% endblock %}
+{% block content %}
+    <h1>💬 Новое сообщение для {{ other_user.username }}</h1>
+    <form method="post" enctype="multipart/form-data" style="max-width: 600px; margin: 2rem auto;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div style="margin-bottom: 1rem;">
+            <label for="id_images" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">📎 Прикрепить изображения (опционально)</label>
+            <input type="file" id="id_images" name="images" multiple accept="image/*" style="display: block; width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+            <small style="color: var(--muted);">Вы можете прикрепить одно или несколько изображений. Текст необязателен.</small>
+        </div>
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Отправить</button>
+    </form>
+{% endblock %}

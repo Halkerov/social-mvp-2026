@@ -1,0 +1,319 @@
+{% extends 'main/base.html' %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<div class="panel-card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+        <div>
+            <h2>👥 {{ group.name }}</h2>
+            {% if group.description %}
+                <p style="color: var(--muted); margin: 0.5rem 0;">{{ group.description }}</p>
+            {% endif %}
+            <div style="font-size: 0.9em; color: var(--muted); margin-top: 0.5rem;">
+                👤 Участников: {{ group.members.count }} | 💬 Сообщений: {{ group.messages.count }}
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+            {% if group.creator == request.user %}
+                <button class="btn" style="background: var(--primary); padding: 0.5rem 1rem; font-size: 0.9em;" 
+                        onclick="showInviteForm()">+ Пригласить</button>
+            {% endif %}
+            {% if request.user != group.creator %}
+                <a href="{% url 'leave_group_chat' group.id %}" class="btn" style="background: var(--danger); padding: 0.5rem 1rem; font-size: 0.9em;" 
+                   onclick="return confirm('Вы уверены?')">🚪 Выход</a>
+            {% endif %}
+            <a href="{% url 'group_chats_list' %}" class="btn" style="background: var(--surface-muted); padding: 0.5rem 1rem; font-size: 0.9em;">← Назад</a>
+        </div>
+    </div>
+    
+    <!-- Invite Form -->
+    <div id="invite-form" style="background: var(--surface-hover); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none;">
+        <form method="post" action="{% url 'invite_to_group' group.id %}">
+            {% csrf_token %}
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" name="username" placeholder="Введите имя пользователя..." maxlength="150" required
+                       style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+                <button type="submit" class="btn" style="background: var(--primary);">Пригласить</button>
+                <button type="button" class="btn" style="background: var(--surface-muted);" onclick="hideInviteForm()">Отмена</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Pending Invites -->
+    {% if pending_invites and group.creator == request.user %}
+        <div style="background: var(--warning); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #333;">
+            <strong>⏳ Ожидающие приглашения:</strong>
+            {% for invite in pending_invites %}
+                <div>• {{ invite.invitee.username }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Messages -->
+    <div id="chat" style="height: 400px; overflow-y: auto; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        {% for message in messages %}
+            <div class="message-row{% if message.sender == request.user %} sent{% endif %}" data-message-id="{{ message.id }}"
+                 style="margin-bottom: 1rem; display: flex; {% if message.sender == request.user %}justify-content: flex-end;{% endif %}">
+                <div style="background: {% if message.sender == request.user %}var(--primary){% else %}var(--surface-hover){% endif %}; 
+                            color: {% if message.sender == request.user %}white{% else %}var(--text){% endif %};
+                            padding: 0.75rem 1rem; border-radius: 8px; max-width: 70%;">
+                    {% if message.sender != request.user %}
+                        <strong style="display: block; margin-bottom: 0.25rem;">{{ message.sender.username }}</strong>
+                    {% endif %}
+                    
+                    {% if message.images.all %}
+                        <div style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            {% for img in message.images.all %}
+                                <img src="{{ img.image.url }}" alt="Image" style="max-width: 150px; max-height: 150px; border-radius: 4px; cursor: pointer;" 
+                                     onclick="window.open(this.src)">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if message.content %}
+                        <div>{{ message.content }}</div>
+                    {% endif %}
+                    
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 0.25rem;">
+                        {{ message.created_at|date:"H:i" }}{% if message.edited %} · отредактировано{% endif %}
+                        {% if message.sender == request.user %}
+                            <a href="#" onclick="editGroupMessage('{{ message.id }}', '{{ message.content|escapejs }}'); return false;" style="margin-left: 0.5rem; color: inherit;">✏️</a>
+                            <a href="#" onclick="deleteGroupMessage('{{ message.id }}'); return false;" style="margin-left: 0.5rem; color: inherit;">🗑️</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Send Message Form -->
+    <form id="chat-form" method="post" action="{% url 'send_group_message' group.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <label for="image-upload" style="cursor: pointer; font-size: 1.2em;">
+                📎
+                <input type="file" id="image-upload" name="images" multiple accept="image/*" style="display: none;" 
+                       onchange="handleMessageImages(this)">
+            </label>
+            <input type="text" name="content" placeholder="Введите сообщение..." 
+                   style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px;">
+            <button type="submit" class="btn" style="background: var(--primary);">➤</button>
+        </div>
+        <div id="file-preview" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+    </form>
+</div>
+
+<script>
+let lastMessageId = {{ last_message_id|default:'0' }};
+let pollInterval = null;
+
+function showInviteForm() {
+    document.getElementById('invite-form').style.display = 'block';
+}
+
+function hideInviteForm() {
+    document.getElementById('invite-form').style.display = 'none';
+}
+
+function handleMessageImages(input) {
+    const preview = document.getElementById('file-preview');
+    preview.innerHTML = '';
+    if (input.files && input.files.length) {
+        Array.from(input.files).forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100px';
+                img.style.maxHeight = '100px';
+                img.style.borderRadius = '4px';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+function deleteGroupMessage(messageId) {
+    if (!confirm('Удалить сообщение?')) return;
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/group-message/${messageId}/delete/`, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const el = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (el) el.remove();
+        }
+    })
+    .catch(e => console.error('Delete error:', e));
+}
+
+function editGroupMessage(messageId, currentContent) {
+    const newContent = prompt('Отредактировать сообщение:', currentContent);
+    if (newContent === null || newContent.trim() === '') return;
+    
+    const formData = new FormData();
+    formData.append('content', newContent.trim());
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/group-message/${messageId}/edit/`, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            lastMessageId = 0; // Force refresh
+            pollNewMessages();
+        }
+    })
+    .catch(e => console.error('Edit error:', e));
+}
+
+function pollNewMessages() {
+    fetch(`/group-chat/{{ group.id }}/updates/?since_id=${lastMessageId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                const chat = document.getElementById('chat');
+                data.messages.forEach(msg => {
+                    if (!chat.querySelector(`[data-message-id="${msg.id}"]`)) {
+                        const bubble = createMessageBubble(msg);
+                        chat.appendChild(bubble);
+                    }
+                });
+                if (data.last_message_id) lastMessageId = data.last_message_id;
+                chat.scrollTop = chat.scrollHeight;
+            }
+        })
+        .catch(e => console.error('Poll error:', e));
+}
+
+function createMessageBubble(msg) {
+    const div = document.createElement('div');
+    div.className = 'message-row' + (msg.is_sent ? ' sent' : '');
+    div.setAttribute('data-message-id', msg.id);
+    div.style.marginBottom = '1rem';
+    div.style.display = 'flex';
+    if (msg.is_sent) div.style.justifyContent = 'flex-end';
+    
+    const bubble = document.createElement('div');
+    bubble.style.background = msg.is_sent ? 'var(--primary)' : 'var(--surface-hover)';
+    bubble.style.color = msg.is_sent ? 'white' : 'var(--text)';
+    bubble.style.padding = '0.75rem 1rem';
+    bubble.style.borderRadius = '8px';
+    bubble.style.maxWidth = '70%';
+    
+    if (!msg.is_sent) {
+        const name = document.createElement('strong');
+        name.textContent = msg.sender_username;
+        name.style.display = 'block';
+        name.style.marginBottom = '0.25rem';
+        bubble.appendChild(name);
+    }
+    
+    if (msg.images && msg.images.length) {
+        const grid = document.createElement('div');
+        grid.style.marginBottom = '0.5rem';
+        grid.style.display = 'flex';
+        grid.style.gap = '0.5rem';
+        grid.style.flexWrap = 'wrap';
+        msg.images.forEach(src => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.style.maxWidth = '150px';
+            img.style.maxHeight = '150px';
+            img.style.borderRadius = '4px';
+            img.style.cursor = 'pointer';
+            img.onclick = () => window.open(src);
+            grid.appendChild(img);
+        });
+        bubble.appendChild(grid);
+    }
+    
+    if (msg.content) {
+        const content = document.createElement('div');
+        content.textContent = msg.content;
+        bubble.appendChild(content);
+    }
+    
+    const time = document.createElement('div');
+    time.style.fontSize = '0.8em';
+    time.style.opacity = '0.7';
+    time.style.marginTop = '0.25rem';
+    const date = new Date(msg.created_at);
+    time.textContent = date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+    
+    if (msg.is_sent) {
+        const deleteBtn = document.createElement('a');
+        deleteBtn.href = '#';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.style.marginLeft = '0.5rem';
+        deleteBtn.style.color = 'inherit';
+        deleteBtn.onclick = (e) => {
+            e.preventDefault();
+            deleteGroupMessage(msg.id);
+        };
+        time.appendChild(deleteBtn);
+    }
+    
+    bubble.appendChild(time);
+    div.appendChild(bubble);
+    return div;
+}
+
+window.addEventListener('load', function() {
+    const chat = document.getElementById('chat');
+    if (chat) {
+        chat.scrollTop = chat.scrollHeight;
+        pollInterval = setInterval(pollNewMessages, 5000);
+    }
+    
+    const form = document.getElementById('chat-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const content = this.querySelector('input[name="content"]');
+            const images = this.querySelector('input[name="images"]');
+            if (!content.value.trim() && (!images.files || !images.files.length)) return;
+            
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.message) {
+                    content.value = '';
+                    images.value = '';
+                    document.getElementById('file-preview').innerHTML = '';
+                    
+                    // Display message immediately
+                    const chat = document.getElementById('chat');
+                    data.message.is_sent = true;
+                    const bubble = createMessageBubble(data.message);
+                    chat.appendChild(bubble);
+                    lastMessageId = data.message.id;
+                    chat.scrollTop = chat.scrollHeight;
+                }
+            })
+            .catch(e => console.error('Send error:', e));
+        });
+    }
+});
+
+window.addEventListener('beforeunload', function() {
+    if (pollInterval) clearInterval(pollInterval);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'main/base.html' %}
+{% block title %}Редактировать профиль{% endblock %}
+{% block content %}
+<div class="panel-card" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-bottom: 25px; color: var(--text-color); font-size: 22px;">✏️ Редактировать профиль</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="edit-profile-form">
+        {% csrf_token %}
+        
+        <!-- Аватар со скрепкой -->
+        <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-color); border-radius: 12px; display: flex; align-items: center; gap: 15px;">
+            {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
+            {% else %}
+                <div style="width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px;">
+                    {{ user.username|first|upper }}
+                </div>
+            {% endif %}
+            
+            <div style="flex: 1;">
+                <label style="cursor: pointer; font-size: 26px; color: var(--primary); padding: 8px; display: inline-block;" title="Загрузить новое фото">
+                    📎
+                    <input type="file" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                </label>
+                <span id="avatar-filename" style="color: var(--muted); font-size: 14px; margin-left: 8px;">Нажмите на скрепку, чтобы изменить фото</span>
+            </div>
+        </div>
+        
+        <!-- Остальные поля -->
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color);">Имя</label>
+            <input type="text" name="first_name" value="{{ user.first_name }}" style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color);">Фамилия</label>
+            <input type="text" name="last_name" value="{{ user.last_name }}" style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color);">О себе</label>
+            <textarea name="bio" rows="3" style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color); resize: vertical;">{{ user.profile.bio }}</textarea>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color);">Интересы</label>
+            <input type="text" name="interests" value="{{ user.profile.interests }}" placeholder="Например: музыка, игры, спорт" style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <a href="{% url 'profile' user.username %}" style="padding: 12px 20px; color: var(--muted); text-decoration: none;">Отмена</a>
+            <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">💾 Сохранить изменения</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function previewAvatar(input) {
+    const filename = document.getElementById('avatar-filename');
+    if (input.files && input.files[0]) {
+        filename.textContent = input.files[0].name;
+        filename.style.color = 'var(--primary)';
+    } else {
+        filename.textContent = 'Нажмите на скрепку, чтобы изменить фото';
+        filename.style.color = 'var(--muted)';
+    }
+}
+</script>
+{% endblock %}

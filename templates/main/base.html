@@ -1,0 +1,556 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.setAttribute('data-theme', savedTheme);
+            });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Social MVP{% endblock %}</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --primary: #4a76f8;
+            --primary-glow: rgba(74, 118, 248, 0.3);
+            --secondary: #666;
+            --muted: #999;
+            --header-bg: #ffffff;
+            --input-bg: #ffffff;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --text-color: #eee;
+            --card-bg: #16213e;
+            --border-color: #0f3460;
+            --primary: #4a76f8;
+            --primary-glow: rgba(74, 118, 248, 0.5);
+            --secondary: #ccc;
+            --muted: #888;
+            --header-bg: #16213e;
+            --input-bg: #1a1a2e;
+            --shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        header {
+            background: var(--header-bg);
+            padding: 10px 20px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .desktop-nav {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .desktop-nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .desktop-nav a:hover {
+            background: var(--primary-glow);
+            color: var(--primary);
+        }
+        
+        .btn-primary {
+            background: var(--primary) !important;
+            color: white !important;
+            padding: 8px 16px !important;
+            border-radius: 20px !important;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+        
+        .theme-btn {
+            background: var(--bg-color);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: var(--text-color);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+        
+        .notification-icon {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid var(--header-bg);
+            transition: all 0.3s;
+        }
+        
+        .notification-badge.hidden { display: none; }
+        .notification-badge.pulse { animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+        }
+        
+        .mobile-nav {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            color: var(--text-color);
+        }
+        
+        .nav-dropdown {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 10px 0;
+            min-width: 200px;
+            z-index: 1000;
+        }
+        
+        .nav-dropdown.active { display: block; }
+        
+        .nav-dropdown a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .nav-dropdown a:hover { background: var(--bg-color); }
+        
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 300px;
+        }
+        
+        .toast-message {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast-success { background: #34c759 !important; }
+        .toast-error { background: #ff3b30 !important; }
+        .toast-info { background: #3b82f6 !important; }
+        .toast-warning { background: #f59e0b !important; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        main {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            transition: all 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        
+        button, .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 2px 8px var(--primary-glow);
+            transition: all 0.3s;
+        }
+        
+        button:hover, .btn:hover {
+            box-shadow: 0 4px 16px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+        
+        .panel-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        
+        .panel-card:hover { box-shadow: 0 4px 16px var(--primary-glow); }
+        
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        
+        .text-muted { color: var(--muted); }
+        .text-center { text-align: center; }
+        
+        @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            .mobile-nav { display: flex !important; }
+            main { padding: 10px; max-width: 100%; }
+            header { padding: 10px 15px; }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-nav { display: none !important; }
+            .desktop-nav { display: flex !important; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="{% url 'index' %}" class="logo">Social MVP</a>
+        
+        <nav class="desktop-nav">
+            {% if user.is_authenticated %}
+                <a href="{% url 'index' %}">🏠 Главная</a>
+                <a href="{% url 'chat_list' %}" style="position: relative;">
+                    💬 Сообщения
+                    <span id="chat-badge" class="notification-badge hidden" style="position: absolute; top: -8px; right: -8px; min-width: 18px; height: 18px; font-size: 10px; padding: 0 5px;">0</span>
+                </a>
+                <a href="{% url 'friends_list' %}" id="friends-link" style="position: relative;">
+                    👫 Друзья
+                    <span id="friends-badge" class="notification-badge {% if pending_requests_count|add:sent_requests_count == 0 %}hidden{% endif %}" style="position: absolute; top: -8px; right: -8px; min-width: 18px; height: 18px; font-size: 10px; padding: 0 5px;">
+                        {{ pending_requests_count|add:sent_requests_count }}
+                    </span>
+                </a>
+                <a href="{% url 'notifications_list' %}" class="notification-icon" style="position: relative;">
+                    🔔
+                    <span id="notification-badge" class="notification-badge {% if unread_count == 0 %}hidden{% else %}pulse{% endif %}">
+                        {% if unread_count > 0 %}{{ unread_count }}{% endif %}
+                    </span>
+                </a>
+                <a href="{% url 'profile' user.username %}" style="display: flex; align-items: center; gap: 8px;">
+                    {% if user.profile.avatar and user.profile.avatar.url %}
+                        <img src="{{ user.profile.avatar.url }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        <span style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">{{ user.username|first|upper }}</span>
+                    {% endif %}
+                    {{ user.username }}
+                </a>
+                <button onclick="toggleTheme()" class="theme-btn" type="button">
+                    <span id="theme-icon">{% if user_theme == 'dark' %}☀️{% else %}🌙{% endif %}</span>
+                </button>
+            {% else %}
+                <a href="{% url 'login' %}">🔐 Войти</a>
+                <a href="{% url 'register' %}" class="btn-primary">📝 Регистрация</a>
+                <button onclick="toggleTheme()" class="theme-btn" type="button">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            {% endif %}
+        </nav>
+        
+        <div class="mobile-nav">
+            {% if user.is_authenticated %}
+                <a href="{% url 'notifications_list' %}" class="notification-icon" style="position: relative; color: var(--text-color); font-size: 20px;">
+                    🔔
+                    <span id="notification-badge-mobile" class="notification-badge {% if unread_count == 0 %}hidden{% else %}pulse{% endif %}" style="top: -3px; right: -3px; min-width: 16px; height: 16px; font-size: 10px;">
+                        {% if unread_count > 0 %}{{ unread_count }}{% endif %}
+                    </span>
+                </a>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" type="button">☰</button>
+            {% else %}
+                <a href="{% url 'login' %}" style="color: var(--primary); font-size: 14px;">Войти</a>
+                <a href="{% url 'register' %}" style="background: var(--primary); color: white; padding: 6px 12px; border-radius: 16px; font-size: 14px;">Регистрация</a>
+            {% endif %}
+        </div>
+        
+        {% if user.is_authenticated %}
+            <div class="nav-dropdown" id="mobileMenu">
+                <a href="{% url 'index' %}">🏠 Главная</a>
+                <a href="{% url 'chat_list' %}">💬 Сообщения</a>
+                <a href="{% url 'friends_list' %}">👫 Друзья</a>
+                <a href="{% url 'notifications_list' %}">🔔 Уведомления</a>
+                <a href="{% url 'profile' user.username %}">👤 Профиль</a>
+                <a href="#" onclick="toggleTheme(); return false;">🌙 Сменить тему</a>
+                <a href="{% url 'logout' %}" style="color: #dc3545; border-top: 1px solid var(--border-color); margin-top: 5px; padding-top: 10px;">🚪 Выйти</a>
+            </div>
+        {% endif %}
+    </header>
+    
+    {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+                <div class="toast-message {% if message.tags == 'error' %}toast-error{% elif message.tags == 'success' %}toast-success{% elif message.tags == 'info' %}toast-info{% elif message.tags == 'warning' %}toast-warning{% endif %}" data-auto-dismiss="3000">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu) {
+                menu.classList.toggle('active');
+            }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('mobileMenu');
+            const btn = document.querySelector('.mobile-menu-btn');
+            if (menu && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                menu.classList.remove('active');
+            }
+        });
+        
+        let themeChangeTimeout = null;
+
+        function toggleTheme() {
+            if (themeChangeTimeout) clearTimeout(themeChangeTimeout);
+            
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.setAttribute('data-theme', newTheme);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            const icons = document.querySelectorAll('#theme-icon, .theme-icon');
+            icons.forEach(icon => {
+                if (icon) icon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            });
+            
+            themeChangeTimeout = setTimeout(() => {
+                fetch('/set-theme/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ theme: newTheme })
+                }).catch(err => console.error('Theme save error:', err));
+            }, 300);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast-message[data-auto-dismiss]');
+            toasts.forEach(function(toast) {
+                const dismissTime = parseInt(toast.getAttribute('data-auto-dismiss')) || 3000;
+                setTimeout(function() {
+                    toast.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(function() {
+                        toast.remove();
+                    }, 300);
+                }, dismissTime);
+            });
+        });
+        
+        function updateNotificationBadge() {
+            fetch('/notifications/count/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const badges = document.querySelectorAll('#notification-badge, #notification-badge-mobile');
+                badges.forEach(badge => {
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.classList.remove('hidden');
+                        badge.classList.add('pulse');
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.classList.remove('pulse');
+                    }
+                });
+            })
+            .catch(error => console.error('Notification count error:', error));
+        }
+        
+        function updateChatBadge() {
+            fetch('/chats/unread-count/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const chatBadge = document.getElementById('chat-badge');
+                if (chatBadge) {
+                    if (data.count > 0) {
+                        chatBadge.textContent = data.count > 99 ? '99+' : data.count;
+                        chatBadge.classList.remove('hidden');
+                        chatBadge.classList.add('pulse');
+                    } else {
+                        chatBadge.classList.add('hidden');
+                        chatBadge.classList.remove('pulse');
+                    }
+                }
+            })
+            .catch(error => console.error('Chat badge error:', error));
+        }
+        
+        function updateFriendsBadge() {
+            fetch('/friends/requests-count/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('friends-badge');
+                if (badge) {
+                    if (data.total > 0) {
+                        badge.textContent = data.total > 99 ? '99+' : data.total;
+                        badge.classList.remove('hidden');
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => console.error('Friends badge error:', error));
+        }
+        
+        {% if user.is_authenticated %}
+        setInterval(updateNotificationBadge, 30000);
+        updateNotificationBadge();
+        
+        setInterval(updateChatBadge, 5000);
+        updateChatBadge();
+        
+        setInterval(updateFriendsBadge, 10000);
+        updateFriendsBadge();
+        {% endif %}
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || '{{ user_theme }}';
+            document.body.setAttribute('data-theme', savedTheme);
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const icon = document.getElementById('theme-icon');
+            if (icon) {
+                icon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

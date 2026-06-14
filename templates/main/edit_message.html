@@ -1,0 +1,24 @@
+{% extends 'main/base.html' %}
+{% block title %}Редактировать сообщение{% endblock %}
+{% block content %}
+<div style="max-width: 700px; margin: 3rem auto; padding: 2rem; background: var(--surface); border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+    <h1 style="margin-bottom: 1rem; font-size: 24px;">✏️ Редактировать сообщение</h1>
+    <form method="post" enctype="multipart/form-data" style="display: grid; gap: 1rem;">
+        {% csrf_token %}
+        <label style="display: block; font-weight: 600;">Текст сообщения</label>
+        {{ form.content }}
+
+        <label style="display: block; font-weight: 600;">Добавить фото</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+            <label for="id_images" class="btn" style="background: var(--primary);">📎 Выбрать фото</label>
+            <span style="color: var(--muted); font-size: 14px;">Можно выбрать несколько файлов</span>
+        </div>
+        <input type="file" id="id_images" name="images" multiple accept="image/*" style="display: none;">
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" class="btn">Сохранить</button>
+            <a href="{% url 'chat' message.receiver.username %}" class="btn" style="background: var(--muted);">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

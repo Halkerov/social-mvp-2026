@@ -1,0 +1,28 @@
+{% extends 'main/base.html' %}
+{% block title %}Создать групповой чат{% endblock %}
+{% block content %}
+<div class="panel-card" style="max-width: 600px; margin: 2rem auto;">
+    <h2>👥 Создать новый групповой чат</h2>
+    
+    <form method="post" style="margin-top: 2rem;">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label for="id_name" style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Название чата *</label>
+            <input type="text" id="id_name" name="name" placeholder="Введите название" maxlength="200" required
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1em;">
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <label for="id_description" style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Описание (опционально)</label>
+            <textarea id="id_description" name="description" placeholder="Введите описание чата..." rows="4"
+                      style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1em; resize: none;"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn" style="background: var(--primary); flex: 1;">✓ Создать</button>
+            <a href="{% url 'group_chats_list' %}" class="btn" style="background: var(--surface-muted); flex: 1; text-align: center;">✕ Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

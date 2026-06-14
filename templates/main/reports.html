@@ -1,0 +1,10 @@
+{% extends 'main/base.html' %}
+{% block title %}Пожаловаться{% endblock %}
+{% block content %}
+    <h1>⚠️ Пожаловаться на {{ reported_user.username }}</h1>
+    <form method="post" style="max-width: 600px; margin: 2rem auto;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Отправить жалобу</button>
+    </form>
+{% endblock %}

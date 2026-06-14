@@ -1,0 +1,102 @@
+{% for reply in replies %}
+    <div style="margin-bottom: 15px; padding: 10px 15px; background: white; border-radius: 8px; {% if level >= 2 %}margin-left: 30px; border-left: 3px solid #007bff;{% else %}margin-left: 15px;{% endif %}">
+        <div style="display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; flex-wrap: wrap;">
+            <a href="{% url 'profile' reply.author.username %}" style="font-weight: 600; color: #007bff; text-decoration: none; margin-right: 5px;">{{ reply.author.username }}</a>
+            {% if reply.parent %}
+                <span style="color: #999; margin: 0 3px;">→</span>
+                <a href="{% url 'profile' reply.parent.author.username %}" style="color: #007bff; text-decoration: none; margin: 0 3px;">{{ reply.parent.author.username }}</a>
+            {% endif %}
+            <span style="color: #999; margin-left: 10px;">{{ reply.created_at|date:"d.m.Y H:i" }}{% if reply.edited %} · отредактировано{% endif %}</span>
+            {% if reply.author == request.user and reply.content != '__deleted_comment__' %}
+                <a href="{% url 'edit_comment' reply.id %}" style="margin-left: 5px; color: #999; font-size: 12px;">✏️</a>
+                <a href="{% url 'delete_comment' reply.id %}" style="margin-left: 5px; color: #dc3545; font-size: 12px;" onclick="return confirm('Удалить комментарий?')">🗑️</a>
+            {% endif %}
+        </div>
+        
+        {% if reply.images.all %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 8px 0;">
+                {% for img in reply.images.all %}
+                    <div style="position: relative;">
+                        <img src="{{ img.image.url }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+                        {% if reply.author == request.user %}
+                            <form method="post" action="{% url 'delete_comment_image' img.id %}" style="position: absolute; top: 5px; right: 5px;">
+                                {% csrf_token %}
+                                <button type="submit" style="background: rgba(220,53,69,0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;">×</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- серый цвет для удалённого комментария -->
+        {% if reply.content == '__deleted_comment__' %}
+            <div class="deleted-comment" style="color: #999; font-style: italic;">Комментарий удалён</div>
+        {% else %}
+            <div style="line-height: 1.5; margin-bottom: 10px; color: #333;">{{ reply.content }}</div>
+        {% endif %}
+        
+        {% if reply.content != '__deleted_comment__' %}
+            <div style="font-size: 13px;">
+                <form action="{% url 'like_comment' reply.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; cursor: pointer; color: #007bff; font-size: 13px;">
+                        ❤️ <span class="like-count">{{ reply.likes.count }}</span>
+                    </button>
+                </form>
+                {% if user.is_authenticated %}
+                    <a href="#" onclick="document.getElementById('reply-form-{{ reply.id }}').style.display='block'; return false;" style="color: #666; text-decoration: none; margin-left: 15px; font-size: 13px;">Ответить</a>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <!-- Форма ответа -->
+        {% if user.is_authenticated and reply.content != '__deleted_comment__' %}
+            <div id="reply-form-{{ reply.id }}" style="display: none; margin-top: 10px;">
+                <form method="post" enctype="multipart/form-data" action="{% url 'reply_comment' reply.id %}">
+                    {% csrf_token %}
+                    <textarea name="content" class="form-control" rows="2" placeholder="Напишите ответ..." style="margin-bottom: 8px; font-size: 13px;"></textarea>
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 12px; color: #666;">
+                            📎 Прикрепить фото:
+                            <input type="file" name="images" multiple accept="image/*" style="margin-left: 5px;">
+                        </label>
+                    </div>
+                    <button type="submit" class="btn" style="background: #007bff; font-size: 13px; padding: 5px 10px;">Отправить</button>
+                    <button type="button" onclick="document.getElementById('reply-form-{{ reply.id }}').style.display='none'" style="background: none; border: none; color: #666; cursor: pointer; margin-left: 10px; font-size: 13px;">Отмена</button>
+                </form>
+            </div>
+        {% endif %}
+        
+        <!-- Рекурсивные ответы -->
+        {% if reply.replies.all %}
+            <div style="margin-top: 10px;">
+                {% include 'main/comment_reply.html' with replies=reply.replies.all level=level|add:1 %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}
+
+<script>
+function handlePhotoSelect(input, replyId) {
+    const preview = document.getElementById('photo-preview-' + replyId);
+    const countSpan = document.getElementById('photo-count-' + replyId);
+    preview.innerHTML = '';
+    
+    if (input.files) {
+        countSpan.textContent = input.files.length + ' фото';
+        Array.from(input.files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 100%; height: 80px; object-fit: cover; border-radius: 4px;';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+</script>

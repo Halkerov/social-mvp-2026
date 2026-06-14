@@ -1,0 +1,711 @@
+{% extends 'main/base.html' %}
+{% block title %}Друзья{% endblock %}
+{% block content %}
+<style>
+.friends-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.friends-header {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.friends-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.friends-tabs {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.friends-tab {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+.friends-tab:hover {
+    color: var(--text-color);
+    background: var(--bg-color);
+}
+
+.friends-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.friends-tab .badge {
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Поиск - БЕЗ иконки */
+.search-box {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 14px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-size: 15px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.friends-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.friend-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    border: 1px solid transparent;
+}
+
+.friend-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.friend-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.friend-avatar img,
+.friend-avatar .avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.friend-avatar .avatar-placeholder {
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.friend-avatar .online-dot-small {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #34c759;
+    border: 2px solid var(--card-bg);
+    border-radius: 50%;
+}
+
+.friend-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-name {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 14px;
+    margin: 0 0 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-name a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.friend-name a:hover {
+    color: var(--primary);
+}
+
+.friend-status-text {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.friend-status-text.online {
+    color: #34c759;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.friend-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.friend-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--primary-glow);
+}
+
+.friend-btn.secondary {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.friend-btn.secondary:hover {
+    background: var(--border-color);
+    box-shadow: none;
+}
+
+.friend-btn.danger {
+    background: #ff3b30;
+}
+
+.friend-btn.danger:hover {
+    background: #d63031;
+}
+
+.friend-btn.success {
+    background: #34c759;
+}
+
+.friend-btn.success:hover {
+    background: #2db84d;
+}
+
+.friend-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-result-item {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.search-result-item:hover {
+    border-color: var(--primary);
+    background: var(--bg-color);
+}
+
+.search-result-item .friend-avatar img,
+.search-result-item .friend-avatar .avatar-placeholder {
+    width: 45px;
+    height: 45px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+}
+
+.empty-state .empty-icon {
+    font-size: 64px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+}
+
+.friends-count {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .friends-container {
+        padding: 10px;
+    }
+    
+    .friends-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .friends-tab {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .friends-tab .tab-text {
+        display: none;
+    }
+    
+    .friend-card {
+        padding: 12px;
+    }
+}
+</style>
+
+<div class="friends-container">
+    <div class="friends-header">
+        <h1 class="friends-title">
+            👥 Друзья
+            <span class="friends-count">{{ friends_count|default:"0" }}</span>
+        </h1>
+        
+        <div class="friends-tabs">
+            <button class="friends-tab active" onclick="switchTab('my-friends')">
+                <span>👥</span>
+                <span class="tab-text">Мои друзья</span>
+                <span class="badge">{{ friends_count|default:"0" }}</span>
+            </button>
+            <button class="friends-tab" onclick="switchTab('search')">
+                <span>🔍</span>
+                <span class="tab-text">Поиск людей</span>
+            </button>
+            <button class="friends-tab" onclick="switchTab('requests')">
+                <span>📨</span>
+                <span class="tab-text">Входящие</span>
+                {% if pending_requests_count %}
+                    <span class="badge">{{ pending_requests_count }}</span>
+                {% endif %}
+            </button>
+            <button class="friends-tab" onclick="switchTab('sent-requests')">
+                <span>📤</span>
+                <span class="tab-text">Исходящие</span>
+                {% if sent_requests_count %}
+                    <span class="badge">{{ sent_requests_count }}</span>
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <div class="tab-content active" id="tab-my-friends">
+        {% if friends %}
+            <div class="friends-grid">
+                {% for friend in friends %}
+                    <div class="friend-card">
+                        <div class="friend-avatar">
+                            <a href="{% url 'profile' friend.username %}">
+                                {% if friend.profile.avatar %}
+                                    <img src="{{ friend.profile.avatar.url }}" alt="{{ friend.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">{{ friend.username|first|upper }}</div>
+                                {% endif %}
+                            </a>
+                            {% if friend.profile.is_online %}
+                                <div class="online-dot-small"></div>
+                            {% endif %}
+                        </div>
+                        <div class="friend-info">
+                            <div class="friend-name">
+                                <a href="{% url 'profile' friend.username %}">
+                                    {{ friend.first_name }} {{ friend.last_name }}
+                                </a>
+                            </div>
+                            <div class="friend-status-text {% if friend.profile.is_online %}online{% endif %}">
+                                {% if friend.profile.is_online %}
+                                    ● онлайн
+                                {% else %}
+                                    был {{ friend.profile.last_seen|date:"d.m.Y H:i" }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <a href="{% url 'chat' friend.username %}" class="friend-btn" title="Написать">💬</a>
+                            <form action="{% url 'unfriend' friend.username %}" method="post" style="display: inline;" onsubmit="return confirm('Удалить из друзей?');">
+                                {% csrf_token %}
+                                <button type="submit" class="friend-btn danger" title="Удалить">✕</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3>У вас пока нет друзей</h3>
+                <p>Найдите людей через поиск и добавьте в друзья</p>
+                <button class="friend-btn" onclick="switchTab('search')" style="margin-top: 15px; padding: 12px 24px;">
+                    🔍 Найти друзей
+                </button>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="tab-content" id="tab-search">
+        <div class="search-box">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="🔍 Поиск по имени, фамилии или username..."
+                   autocomplete="off">
+        </div>
+        
+        <div id="searchResults" class="search-results">
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>Начните вводить имя</h3>
+                <p>Найдите людей по имени, фамилии или username</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tab-content" id="tab-requests">
+        {% if pending_requests %}
+            <div class="search-results">
+                {% for req in pending_requests %}
+                    <div class="search-result-item">
+                        <div class="friend-avatar">
+                            <a href="{% url 'profile' req.requester.username %}">
+                                {% if req.requester.profile.avatar %}
+                                    <img src="{{ req.requester.profile.avatar.url }}" alt="{{ req.requester.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">{{ req.requester.username|first|upper }}</div>
+                                {% endif %}
+                            </a>
+                            {% if req.requester.profile.is_online %}
+                                <div class="online-dot-small"></div>
+                            {% endif %}
+                        </div>
+                        <div class="friend-info">
+                            <div class="friend-name">
+                                <a href="{% url 'profile' req.requester.username %}">
+                                    {{ req.requester.first_name }} {{ req.requester.last_name }}
+                                </a>
+                            </div>
+                            <div class="friend-status-text">
+                                хочет добавить вас в друзья
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <a href="{% url 'accept_friend_request' req.id %}" class="friend-btn success">✓ Принять</a>
+                            <a href="{% url 'decline_friend_request' req.id %}" class="friend-btn secondary">✕ Отклонить</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📨</div>
+                <h3>Нет входящих заявок</h3>
+                <p>Когда кто-то захочет добавить вас, заявка появится здесь</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="tab-content" id="tab-sent-requests">
+        {% if sent_requests %}
+            <div class="search-results">
+                {% for req in sent_requests %}
+                    <div class="search-result-item">
+                        <div class="friend-avatar">
+                            <a href="{% url 'profile' req.receiver.username %}">
+                                {% if req.receiver.profile.avatar %}
+                                    <img src="{{ req.receiver.profile.avatar.url }}" alt="{{ req.receiver.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">{{ req.receiver.username|first|upper }}</div>
+                                {% endif %}
+                            </a>
+                            {% if req.receiver.profile.is_online %}
+                                <div class="online-dot-small"></div>
+                            {% endif %}
+                        </div>
+                        <div class="friend-info">
+                            <div class="friend-name">
+                                <a href="{% url 'profile' req.receiver.username %}">
+                                    {{ req.receiver.first_name }} {{ req.receiver.last_name }}
+                                </a>
+                            </div>
+                            <div class="friend-status-text">
+                                заявка отправлена {{ req.created_at|date:"d.m.Y" }}
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <a href="{% url 'chat' req.receiver.username %}" class="friend-btn">💬 Написать</a>
+                            <form action="{% url 'cancel_friend_request' req.id %}" method="post" style="display: inline;" onsubmit="return confirm('Отменить заявку?');">
+                                {% csrf_token %}
+                                <button type="submit" class="friend-btn danger">✕ Отменить</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📤</div>
+                <h3>Нет исходящих заявок</h3>
+                <p>Когда вы отправите кому-то заявку, она появится здесь</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.friends-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.getElementById('tab-' + tabName).classList.add('active');
+    
+    const tabs = document.querySelectorAll('.friends-tab');
+    if (tabName === 'my-friends') tabs[0].classList.add('active');
+    else if (tabName === 'search') tabs[1].classList.add('active');
+    else if (tabName === 'requests') tabs[2].classList.add('active');
+    else if (tabName === 'sent-requests') tabs[3].classList.add('active');
+    
+    if (tabName === 'search') {
+        setTimeout(() => {
+            document.getElementById('searchInput').focus();
+        }, 100);
+    }
+}
+
+// Живой поиск
+let searchTimeout = null;
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        if (query.length < 1) {
+            searchResults.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>Начните вводить имя</h3>
+                    <p>Найдите людей по имени, фамилии или username</p>
+                </div>
+            `;
+            return;
+        }
+        
+        searchResults.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: var(--muted);">
+                <div style="font-size: 24px;">⏳</div>
+                <div style="margin-top: 10px;">Поиск...</div>
+            </div>
+        `;
+        
+        searchTimeout = setTimeout(() => {
+            const url = '/friends/search/?q=' + encodeURIComponent(query);
+            console.log('Fetching:', url);
+            
+            fetch(url)
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received data:', data);
+                
+                if (data.users && data.users.length > 0) {
+                    let html = '';
+                    data.users.forEach(user => {
+                        let actionHtml = '';
+                        
+                        if (user.status === 'friend') {
+                            actionHtml = '<span style="color: #34c759; font-size: 12px; font-weight: 600;">✓ В друзьях</span>';
+                        } else if (user.status === 'pending_sent') {
+                            actionHtml = '<button class="friend-btn secondary" disabled>⏳ Заявка отправлена</button>';
+                        } else if (user.status === 'pending_received') {
+                            actionHtml = '<a href="/friends/accept/' + user.id + '/" class="friend-btn success">✓</a> <a href="/friends/decline/' + user.id + '/" class="friend-btn secondary">✕</a>';
+                        } else {
+                            actionHtml = '<button class="friend-btn" onclick="sendFriendRequest(' + user.id + ', \'' + user.username + '\', this)">+ Добавить</button>';
+                        }
+                        
+                        const displayName = (user.first_name || user.last_name) 
+                            ? (user.first_name + ' ' + user.last_name).trim() 
+                            : user.username;
+                        
+                        html += '<div class="search-result-item">';
+                        html += '<div class="friend-avatar">';
+                        html += '<a href="/profile/' + user.username + '/">';
+                        if (user.avatar_url) {
+                            html += '<img src="' + user.avatar_url + '" alt="' + user.username + '">';
+                        } else {
+                            html += '<div class="avatar-placeholder">' + user.username.charAt(0).toUpperCase() + '</div>';
+                        }
+                        html += '</a>';
+                        if (user.is_online) {
+                            html += '<div class="online-dot-small"></div>';
+                        }
+                        html += '</div>';
+                        
+                        html += '<div class="friend-info">';
+                        html += '<div class="friend-name"><a href="/profile/' + user.username + '/">' + displayName + '</a></div>';
+                        html += '<div class="friend-status-text ' + (user.is_online ? 'online' : '') + '">';
+                        html += user.is_online ? '● онлайн' : '@' + user.username;
+                        html += '</div>';
+                        html += '</div>';
+                        
+                        html += '<div class="friend-actions">' + actionHtml + '</div>';
+                        html += '</div>';
+                    });
+                    searchResults.innerHTML = html;
+                } else {
+                    searchResults.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">😕</div>
+                            <h3>Ничего не найдено</h3>
+                            <p>Попробуйте другой запрос</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchResults.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">❌</div>
+                        <h3>Ошибка поиска</h3>
+                        <p>Попробуйте ещё раз</p>
+                    </div>
+                `;
+            });
+        }, 300);
+    });
+}
+
+// Отправка заявки в друзья через AJAX
+function sendFriendRequest(userId, username, btnElement) {
+    if (!confirm('Отправить заявку в друзья пользователю ' + username + '?')) {
+        return;
+    }
+    
+    // Показываем что заявка отправляется
+    btnElement.disabled = true;
+    btnElement.textContent = '⏳ Отправка...';
+    
+    fetch('/friends/' + username + '/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Успех - меняем кнопку на "Заявка отправлена"
+            btnElement.textContent = '⏳ Заявка отправлена';
+            btnElement.disabled = true;
+            btnElement.classList.remove('friend-btn');
+            btnElement.classList.add('friend-btn', 'secondary');
+            
+            // Обновляем весь список поиска чтобы показать актуальный статус
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput && searchInput.value.trim()) {
+                searchInput.dispatchEvent(new Event('input'));
+            }
+        } else {
+            // Ошибка
+            alert('Ошибка при отправке заявки');
+            btnElement.disabled = false;
+            btnElement.textContent = '+ Добавить';
+        }
+    })
+    .catch(error => {
+        console.error('Error sending friend request:', error);
+        alert('Ошибка при отправке заявки');
+        btnElement.disabled = false;
+        btnElement.textContent = '+ Добавить';
+    });
+}
+</script>
+{% endblock %}

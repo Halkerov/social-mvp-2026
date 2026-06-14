@@ -1,0 +1,54 @@
+{% extends 'main/base.html' %}
+{% block title %}Групповые чаты{% endblock %}
+{% block content %}
+<div class="panel-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2>👥 Групповые чаты</h2>
+        <a href="{% url 'create_group_chat' %}" class="btn" style="background: var(--primary);">+ Создать чат</a>
+    </div>
+    
+    {% if pending_invites %}
+        <div style="background: var(--surface-hover); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem;">📮 Приглашения ({{ pending_invites.count }})</h3>
+            {% for invite in pending_invites %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <strong>{{ invite.group_chat.name }}</strong>
+                        <div style="font-size: 0.9em; color: var(--muted);">от {{ invite.inviter.username }}</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{% url 'accept_group_invite' invite.id %}" class="btn" style="background: var(--primary); padding: 0.5rem 1rem; font-size: 0.9em;">✓ Принять</a>
+                        <a href="{% url 'decline_group_invite' invite.id %}" class="btn" style="background: var(--danger); padding: 0.5rem 1rem; font-size: 0.9em;">✕ Отклонить</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <h3 style="margin-bottom: 1rem;">Мои чаты</h3>
+    {% for chat in group_chats %}
+        <div style="background: var(--surface-hover); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 0.5rem 0;">
+                        <a href="{% url 'group_chat_detail' chat.id %}" style="color: var(--primary); text-decoration: none;">
+                            👥 {{ chat.name }}
+                        </a>
+                    </h4>
+                    {% if chat.description %}
+                        <p style="margin: 0.5rem 0; color: var(--muted); font-size: 0.95em;">{{ chat.description }}</p>
+                    {% endif %}
+                    <div style="font-size: 0.9em; color: var(--muted); margin-top: 0.5rem;">
+                        👤 {{ chat.members.count }} участников | 💬 {{ chat.messages.count }} сообщений
+                    </div>
+                </div>
+                <a href="{% url 'group_chat_detail' chat.id %}" class="btn" style="background: var(--primary); margin-left: 1rem;">Открыть</a>
+            </div>
+        </div>
+    {% empty %}
+        <p style="text-align: center; color: var(--muted); padding: 2rem;">
+            Вы еще не в групповых чатах. <a href="{% url 'create_group_chat' %}">Создайте первый!</a>
+        </p>
+    {% endfor %}
+</div>
+{% endblock %}

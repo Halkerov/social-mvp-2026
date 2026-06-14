@@ -1,0 +1,98 @@
+{% extends "main/base.html" %}
+
+{% block title %}Сообщения{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Сообщения</h1>
+    
+    {% if chat_users %}
+        <div class="chat-list">
+            {% for user in chat_users %}
+                <div class="chat-item">
+                    <a href="{% url 'chat' user.username %}">
+                        <div class="chat-avatar">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+                            {% else %}
+                                <div class="avatar-placeholder">{{ user.username|first|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="chat-info">
+                            <h3>{{ user.get_full_name|default:user.username }}</h3>
+                            <p>@{{ user.username }}</p>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Нет сообщений. <a href="{% url 'index' %}">Найти друзей</a></p>
+    {% endif %}
+</div>
+
+<style>
+    .chat-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .chat-item a {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text);
+        transition: background 0.2s;
+    }
+    
+    .chat-item a:hover {
+        background: var(--surface-muted);
+    }
+    
+    .chat-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .chat-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .avatar-placeholder {
+        color: white;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    
+    .chat-info {
+        flex: 1;
+    }
+    
+    .chat-info h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+    
+    .chat-info p {
+        margin: 5px 0 0 0;
+        color: var(--muted);
+        font-size: 14px;
+    }
+</style>
+{% endblock %}

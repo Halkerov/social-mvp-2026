@@ -1,0 +1,81 @@
+{% extends 'main/base.html' %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="page-hero">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                {% if group.avatar %}
+                    <img src="{{ group.avatar.url }}" alt="{{ group.name }}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover;">
+                {% else %}
+                    <div style="width: 80px; height: 80px; border-radius: 8px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+                        {{ group.name|first|upper }}
+                    </div>
+                {% endif %}
+                <div>
+                    <h1 class="page-title">{{ group.name }}</h1>
+                    <p style="color: var(--muted); margin: 8px 0;">👤 {{ group.members.count }} участников</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                {% if can_edit %}
+                    <a href="{% url 'edit_community' group.id %}" class="btn">✏️ Редактировать</a>
+                {% endif %}
+                {% if is_member %}
+                    <a href="{% url 'create_community_post' group.id %}" class="btn">📝 Написать</a>
+                    <a href="{% url 'leave_community' group.id %}" class="btn" style="background: var(--danger);" onclick="return confirm('Выйти из сообщества?')">🚪 Выйти</a>
+                {% else %}
+                    <a href="{% url 'join_community' group.id %}" class="btn">➕ Вступить</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <h2 style="margin-top: 0;">📌 Описание</h2>
+            <p style="color: var(--text); line-height: 1.6;">{{ group.description|default:"Описание отсутствует" }}</p>
+            <p style="color: var(--muted); font-size: 13px;">
+                Создатель: <a href="{% url 'profile' group.creator.username %}" style="color: var(--primary);">{{ group.creator.username }}</a>
+            </p>
+        </div>
+
+        {% if posts %}
+        <div class="panel-card">
+            <h2 style="margin-top: 0;">📝 Публикации</h2>
+            {% for post in posts %}
+                <a href="{% url 'community_post_detail' post.id %}" style="text-decoration: none; display: block; margin-bottom: 1rem; padding: 1rem; background: var(--surface-muted); border-radius: 8px; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface-muted)'">
+                    <div style="display: flex; gap: 1rem;">
+                        {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="{{ post.title }}" style="width: 100px; height: 100px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+                        {% endif %}
+                        <div class="post" style="flex: 1; background: transparent; padding: 0;">
+                            <h3 style="margin: 0 0 8px 0; color: var(--primary);">{{ post.title }}</h3>
+                            <p style="margin: 8px 0; color: var(--text);">{{ post.content|truncatewords:30 }}</p>
+                            <div class="post-meta">
+                                <a href="{% url 'profile' post.author.username %}" style="color: var(--primary);">{{ post.author.username }}</a>
+                                · {{ post.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="panel-card">
+            <p style="color: var(--muted); text-align: center;">Пока нет публикаций. {% if is_member %}<a href="{% url 'create_community_post' group.id %}" style="color: var(--primary);">Напишите первую!</a>{% endif %}</p>
+        </div>
+        {% endif %}
+
+        <div class="panel-card">
+            <h2 style="margin-top: 0;">👥 Участники ({{ group.members.count }})</h2>
+            <div class="card-grid" data-columns="3">
+                {% for member in group.members.all %}
+                    <div style="background: var(--surface-muted); padding: 16px; border-radius: 16px; text-align: center;">
+                        <a href="{% url 'profile' member.username %}" style="text-decoration: none; color: var(--primary); font-weight: 600; display: block;">
+                            {{ member.username }}
+                        </a>
+                        <p style="color: var(--muted); font-size: 13px; margin: 8px 0;">{% if member.profile.is_online %}🟢 В сети{% else %}🔴 Был в сети{% endif %}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
