@@ -58,7 +58,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-7. Откройте в браузере: http://127.0.0.1:8000/
+7. Откройте в браузере: http://127.0.0.1:8000/ или http://127.0.0.1:8000/admin # для админки
 
 ## 👤 Автор
 
